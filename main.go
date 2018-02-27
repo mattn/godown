@@ -12,6 +12,7 @@ import (
 )
 
 var replacer = strings.NewReplacer(
+	"\t", " ",
 	"\r", "",
 	"\n", "",
 )
@@ -61,7 +62,7 @@ func br(node *html.Node, w io.Writer) {
 	}
 }
 
-func walk(node *html.Node, w io.Writer) {
+func walk(node *html.Node, w io.Writer, nest int) {
 	if node.Type == html.TextNode {
 		text := replacer.Replace(strings.Trim(node.Data, " \t\r\n"))
 		fmt.Fprint(w, text)
@@ -73,41 +74,41 @@ func walk(node *html.Node, w io.Writer) {
 			switch strings.ToLower(c.Data) {
 			case "a":
 				fmt.Fprint(w, "[")
-				walk(c, w)
+				walk(c, w, nest)
 				fmt.Fprint(w, "]("+attr(c, "href")+")")
 			case "b", "strong":
 				fmt.Fprint(w, "**")
-				walk(c, w)
+				walk(c, w, nest)
 				fmt.Fprint(w, "**")
 			case "i", "em":
 				fmt.Fprint(w, "_")
-				walk(c, w)
+				walk(c, w, nest)
 				fmt.Fprint(w, "_")
 			case "del":
 				fmt.Fprint(w, "~~")
-				walk(c, w)
+				walk(c, w, nest)
 				fmt.Fprint(w, "~~")
 			case "br":
 				fmt.Fprint(w, "\n")
 			case "p":
 				br(c, w)
 				fmt.Fprint(w, "\n")
-				walk(c, w)
+				walk(c, w, nest)
 				fmt.Fprint(w, "\n")
 			case "code":
 				fmt.Fprint(w, "`")
-				walk(c, w)
+				walk(c, w, nest)
 				fmt.Fprint(w, "`")
 			case "blockquote":
 				if hasClass(c, "code") {
 					br(c, w)
 					fmt.Fprint(w, "\n```\n")
-					walk(c, w)
+					walk(c, w, nest)
 					br(c, w)
 					fmt.Fprint(w, "```\n")
 				} else {
 					var buf bytes.Buffer
-					walk(c, &buf)
+					walk(c, &buf, nest)
 
 					br(c, w)
 					fmt.Fprint(w, "\n")
@@ -120,24 +121,24 @@ func walk(node *html.Node, w io.Writer) {
 				}
 			case "ul", "ol":
 				// FIXME: make indentation for the nest level
-				br(c, w)
-				walk(c, w)
+				walk(c, w, nest+1)
 				fmt.Fprint(w, "\n")
 			case "li":
 				br(c, w)
+				fmt.Fprint(w, strings.Repeat("  ", nest-1))
 				if isChildOf(c, "ul") {
 					fmt.Fprint(w, "* ")
 				} else if isChildOf(c, "ol") {
 					n++
 					fmt.Fprint(w, fmt.Sprintf("%d. ", n))
 				}
-				walk(c, w)
+				walk(c, w, nest)
 				fmt.Fprint(w, "\n")
 			case "h1", "h2", "h3", "h4", "h5", "h6":
 				br(c, w)
 				fmt.Fprint(w, "\n")
 				fmt.Fprint(w, strings.Repeat("#", int(rune(c.Data[1])-rune('0')))+" ")
-				walk(c, w)
+				walk(c, w, nest)
 				fmt.Fprint(w, "\n")
 			case "img":
 				fmt.Fprint(w, "!["+attr(c, "alt")+"]("+attr(c, "src")+")")
@@ -145,10 +146,10 @@ func walk(node *html.Node, w io.Writer) {
 				br(c, w)
 				fmt.Fprint(w, "\n---\n")
 			default:
-				walk(c, w)
+				walk(c, w, nest)
 			}
 		default:
-			walk(c, w)
+			walk(c, w, nest)
 		}
 	}
 }
@@ -158,5 +159,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	walk(doc, os.Stdout)
+	walk(doc, os.Stdout, 0)
 }
