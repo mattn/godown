@@ -16,6 +16,11 @@ $ godown < index.html > index.md
 $ go get github.com/mattn/godown
 ```
 
+## TODO
+
+* table tag
+* nested ul/ol should make indentation
+
 ## License
 
 MIT
