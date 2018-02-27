@@ -55,7 +55,7 @@ func br(node *html.Node, w io.Writer) {
 		}
 	case html.ElementNode:
 		switch strings.ToLower(node.Data) {
-		case "br", "p", "blockquote":
+		case "br", "p", "ul", "ol", "blockquote":
 			fmt.Fprint(w, "\n")
 		}
 	}
@@ -119,6 +119,7 @@ func walk(node *html.Node, w io.Writer) {
 					fmt.Fprint(w, "\n")
 				}
 			case "ul", "ol":
+				// FIXME: make indentation for the nest level
 				br(c, w)
 				walk(c, w)
 				fmt.Fprint(w, "\n")
