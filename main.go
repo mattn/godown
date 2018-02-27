@@ -153,17 +153,7 @@ func walk(node *html.Node, w io.Writer) {
 }
 
 func main() {
-	var buf bytes.Buffer
-	buf.WriteString(`
-	<html>
-	<body>
-	`)
-	io.Copy(&buf, os.Stdin)
-	buf.WriteString(`
-	</body>
-	</html>
-	`)
-	doc, err := html.Parse(&buf)
+	doc, err := html.Parse(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
