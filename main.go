@@ -6,15 +6,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"golang.org/x/net/html"
-)
-
-var replacer = strings.NewReplacer(
-	"\t", " ",
-	"\r", "",
-	"\n", "",
 )
 
 func isChildOf(node *html.Node, name string) bool {
@@ -90,8 +85,10 @@ func pre(node *html.Node, w io.Writer) {
 
 func walk(node *html.Node, w io.Writer, nest int) {
 	if node.Type == html.TextNode {
-		text := replacer.Replace(strings.TrimLeft(node.Data, " \t\r\n"))
-		fmt.Fprint(w, text)
+		if strings.TrimSpace(node.Data) != "" {
+			text := regexp.MustCompile(`[[:space:]][[:space:]]*`).ReplaceAllString(strings.Trim(node.Data, "\t\r\n"), " ")
+			fmt.Fprint(w, text)
+		}
 	}
 	n := 0
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
