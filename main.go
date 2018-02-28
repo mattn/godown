@@ -100,22 +100,27 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				fmt.Fprint(w, "`")
 				walk(c, w, nest)
 				fmt.Fprint(w, "`")
+			case "pre":
+				fmt.Fprint(w, "\n```\n")
+				walk(c, w, nest)
+				br(c, w)
+				fmt.Fprint(w, "```\n")
 			case "blockquote":
+				br(c, w)
 				if hasClass(c, "code") {
-					br(c, w)
 					fmt.Fprint(w, "\n```\n")
 					walk(c, w, nest)
 					br(c, w)
 					fmt.Fprint(w, "```\n")
 				} else {
 					var buf bytes.Buffer
-					walk(c, &buf, nest)
+					walk(c, &buf, nest+1)
 
-					br(c, w)
-					for _, l := range strings.Split(buf.String(), "\n") {
-						if l != "" {
-							fmt.Fprint(w, strings.Repeat("> ", nest+1)+l+"\n")
+					if lines := strings.Split(strings.TrimSpace(buf.String()), "\n"); len(lines) > 0 {
+						for _, l := range lines {
+							fmt.Fprint(w, "> "+strings.TrimSpace(l)+"\n")
 						}
+						fmt.Fprint(w, "\n")
 					}
 				}
 			case "ul", "ol":
