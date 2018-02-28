@@ -118,7 +118,6 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				fmt.Fprint(w, "\n")
 			case "p":
 				br(c, w)
-				fmt.Fprint(w, "\n")
 				walk(c, w, nest)
 				fmt.Fprint(w, "\n")
 			case "code":
