@@ -64,7 +64,7 @@ func br(node *html.Node, w io.Writer) {
 
 func walk(node *html.Node, w io.Writer, nest int) {
 	if node.Type == html.TextNode {
-		text := replacer.Replace(strings.Trim(node.Data, " \t\r\n"))
+		text := replacer.Replace(strings.TrimLeft(node.Data, " \t\r\n"))
 		fmt.Fprint(w, text)
 	}
 	n := 0
