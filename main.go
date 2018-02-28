@@ -112,13 +112,11 @@ func walk(node *html.Node, w io.Writer, nest int) {
 					walk(c, &buf, nest)
 
 					br(c, w)
-					fmt.Fprint(w, "\n")
 					for _, l := range strings.Split(buf.String(), "\n") {
 						if l != "" {
 							fmt.Fprint(w, strings.Repeat("> ", nest+1)+l+"\n")
 						}
 					}
-					fmt.Fprint(w, "\n")
 				}
 			case "ul", "ol":
 				walk(c, w, nest+1)
