@@ -120,7 +120,8 @@ func walk(node *html.Node, w io.Writer, nest int) {
 			case "p":
 				br(c, w)
 				walk(c, w, nest)
-				fmt.Fprint(w, "\n")
+				br(c, w)
+				fmt.Fprint(w, "\n\n")
 			case "code":
 				if !isChildOf(c, "pre") {
 					fmt.Fprint(w, "`")
@@ -130,18 +131,25 @@ func walk(node *html.Node, w io.Writer, nest int) {
 			case "pre":
 				br(c, w)
 				fmt.Fprint(w, "```\n")
-				pre(c, w)
-				br(c, w)
+				var buf bytes.Buffer
+				pre(c, &buf)
+				fmt.Fprint(w, buf.String())
+				if !strings.HasSuffix(buf.String(), "\n") {
+					fmt.Fprint(w, "\n")
+				}
 				fmt.Fprint(w, "```\n\n")
 			case "blockquote":
 				br(c, w)
+				var buf bytes.Buffer
 				if hasClass(c, "code") {
 					fmt.Fprint(w, "```\n")
-					pre(c, w)
-					br(c, w)
-					fmt.Fprint(w, "```\n")
+					pre(c, &buf)
+					fmt.Fprint(w, buf.String())
+					if !strings.HasSuffix(buf.String(), "\n") {
+						fmt.Fprint(w, "\n")
+					}
+					fmt.Fprint(w, "```\n\n")
 				} else {
-					var buf bytes.Buffer
 					walk(c, &buf, nest+1)
 
 					if lines := strings.Split(strings.TrimSpace(buf.String()), "\n"); len(lines) > 0 {
@@ -153,6 +161,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				}
 			case "ul", "ol":
 				walk(c, w, nest+1)
+				fmt.Fprint(w, "\n")
 			case "li":
 				br(c, w)
 				fmt.Fprint(w, strings.Repeat("  ", nest-1))
@@ -166,9 +175,6 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				fmt.Fprint(w, "\n")
 			case "h1", "h2", "h3", "h4", "h5", "h6":
 				br(c, w)
-				if c.PrevSibling != nil {
-					fmt.Fprint(w, "\n")
-				}
 				fmt.Fprint(w, strings.Repeat("#", int(rune(c.Data[1])-rune('0')))+" ")
 				walk(c, w, nest)
 				fmt.Fprint(w, "\n\n")
