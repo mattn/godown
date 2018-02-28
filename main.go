@@ -114,7 +114,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 					fmt.Fprint(w, "\n")
 					for _, l := range strings.Split(buf.String(), "\n") {
 						if l != "" {
-							fmt.Fprint(w, "> "+l+"\n")
+							fmt.Fprint(w, strings.Repeat("> ", nest+1)+l+"\n")
 						}
 					}
 					fmt.Fprint(w, "\n")
