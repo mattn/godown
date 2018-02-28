@@ -52,7 +52,7 @@ func br(node *html.Node, w io.Writer) {
 		}
 	case html.ElementNode:
 		switch strings.ToLower(node.Data) {
-		case "p", "ul", "ol", "div", "blockquote":
+		case "p", "ul", "ol", "div", "blockquote", "h1", "h2", "h3", "h4", "h5", "h6":
 			fmt.Fprint(w, "\n")
 		}
 	}
@@ -65,6 +65,10 @@ func pre(node *html.Node, w io.Writer) {
 		for c := node.FirstChild; c != nil; c = c.NextSibling {
 			switch c.Type {
 			case html.ElementNode:
+				if strings.ToLower(c.Data) == "code" {
+					pre(c, w)
+					return
+				}
 				fmt.Fprintf(w, "<%s", c.Data)
 				for _, attr := range c.Attr {
 					fmt.Fprintf(w, " %s=%q", attr.Key, attr.Val)
@@ -118,9 +122,11 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				walk(c, w, nest)
 				fmt.Fprint(w, "\n")
 			case "code":
-				fmt.Fprint(w, "`")
-				pre(c, w)
-				fmt.Fprint(w, "`")
+				if !isChildOf(c, "pre") {
+					fmt.Fprint(w, "`")
+					pre(c, w)
+					fmt.Fprint(w, "`")
+				}
 			case "pre":
 				br(c, w)
 				fmt.Fprint(w, "```\n")
@@ -160,10 +166,12 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				fmt.Fprint(w, "\n")
 			case "h1", "h2", "h3", "h4", "h5", "h6":
 				br(c, w)
-				fmt.Fprint(w, "\n")
+				if c.PrevSibling != nil {
+					fmt.Fprint(w, "\n")
+				}
 				fmt.Fprint(w, strings.Repeat("#", int(rune(c.Data[1])-rune('0')))+" ")
 				walk(c, w, nest)
-				fmt.Fprint(w, "\n")
+				fmt.Fprint(w, "\n\n")
 			case "img":
 				fmt.Fprint(w, "!["+attr(c, "alt")+"]("+attr(c, "src")+")")
 			case "hr":
