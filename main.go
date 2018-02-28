@@ -45,7 +45,6 @@ func attr(node *html.Node, key string) string {
 }
 
 func br(node *html.Node, w io.Writer) {
-	node = node.PrevSibling
 	if node == nil {
 		return
 	}
@@ -56,7 +55,7 @@ func br(node *html.Node, w io.Writer) {
 		}
 	case html.ElementNode:
 		switch strings.ToLower(node.Data) {
-		case "br", "p", "ul", "ol", "blockquote":
+		case "html", "br", "p", "ul", "ol", "blockquote":
 			fmt.Fprint(w, "\n")
 		}
 	}
@@ -91,7 +90,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 			case "br":
 				fmt.Fprint(w, "\n")
 			case "p":
-				br(c, w)
+				br(c.PrevSibling, w)
 				fmt.Fprint(w, "\n")
 				walk(c, w, nest)
 				fmt.Fprint(w, "\n")
@@ -101,16 +100,16 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				fmt.Fprint(w, "`")
 			case "blockquote":
 				if hasClass(c, "code") {
-					br(c, w)
+					br(c.PrevSibling, w)
 					fmt.Fprint(w, "\n```\n")
 					walk(c, w, nest)
-					br(c, w)
+					br(c.PrevSibling, w)
 					fmt.Fprint(w, "```\n")
 				} else {
 					var buf bytes.Buffer
 					walk(c, &buf, nest)
 
-					br(c, w)
+					br(c.PrevSibling, w)
 					fmt.Fprint(w, "\n")
 					for _, l := range strings.Split(buf.String(), "\n") {
 						if l != "" {
@@ -124,7 +123,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				walk(c, w, nest+1)
 				fmt.Fprint(w, "\n")
 			case "li":
-				br(c, w)
+				br(c.PrevSibling, w)
 				fmt.Fprint(w, strings.Repeat("  ", nest-1))
 				if isChildOf(c, "ul") {
 					fmt.Fprint(w, "* ")
@@ -135,7 +134,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				walk(c, w, nest)
 				fmt.Fprint(w, "\n")
 			case "h1", "h2", "h3", "h4", "h5", "h6":
-				br(c, w)
+				br(c.PrevSibling, w)
 				fmt.Fprint(w, "\n")
 				fmt.Fprint(w, strings.Repeat("#", int(rune(c.Data[1])-rune('0')))+" ")
 				walk(c, w, nest)
@@ -143,7 +142,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 			case "img":
 				fmt.Fprint(w, "!["+attr(c, "alt")+"]("+attr(c, "src")+")")
 			case "hr":
-				br(c, w)
+				br(c.PrevSibling, w)
 				fmt.Fprint(w, "\n---\n")
 			default:
 				walk(c, w, nest)

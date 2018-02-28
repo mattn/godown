@@ -30,6 +30,7 @@ func TestGodown(t *testing.T) {
 		}
 		var buf bytes.Buffer
 		walk(doc, &buf, 0)
+		br(doc.LastChild, &buf)
 
 		b, err := ioutil.ReadFile(file[:len(file)-4] + "md")
 		if err != nil {
@@ -38,5 +39,6 @@ func TestGodown(t *testing.T) {
 		if string(b) != buf.String() {
 			t.Fatalf("want %q, but got %q", string(b), buf.String())
 		}
+		f.Close()
 	}
 }
