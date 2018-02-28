@@ -39,7 +39,7 @@ func TestGodown(t *testing.T) {
 			t.Fatal(err)
 		}
 		if string(b) != buf.String() {
-			t.Errorf("(%s): want %q, but got %q", file, string(b), buf.String())
+			t.Errorf("(%s):\nwant:\n%s\ngot:\n%s\n", file, string(b), buf.String())
 		}
 		f.Close()
 	}

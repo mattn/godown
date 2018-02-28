@@ -63,6 +63,31 @@ func br(node *html.Node, w io.Writer) {
 	}
 }
 
+func pre(node *html.Node, w io.Writer) {
+	if node.Type == html.TextNode {
+		fmt.Fprint(w, node.Data)
+	} else {
+		for c := node.FirstChild; c != nil; c = c.NextSibling {
+			switch c.Type {
+			case html.ElementNode:
+				fmt.Fprintf(w, "<%s", c.Data)
+				for _, attr := range c.Attr {
+					fmt.Fprintf(w, " %s=%q", attr.Key, attr.Val)
+				}
+				fmt.Fprint(w, ">")
+				if c.FirstChild != nil {
+					pre(c, w)
+					fmt.Fprintf(w, "</%s>", c.Data)
+				} else {
+					fmt.Fprint(w, "/>")
+				}
+			default:
+				pre(c, w)
+			}
+		}
+	}
+}
+
 func walk(node *html.Node, w io.Writer, nest int) {
 	if node.Type == html.TextNode {
 		text := replacer.Replace(strings.TrimLeft(node.Data, " \t\r\n"))
@@ -98,18 +123,19 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				fmt.Fprint(w, "\n")
 			case "code":
 				fmt.Fprint(w, "`")
-				walk(c, w, nest)
+				pre(c, w)
 				fmt.Fprint(w, "`")
 			case "pre":
-				fmt.Fprint(w, "\n```\n")
-				walk(c, w, nest)
 				br(c, w)
 				fmt.Fprint(w, "```\n")
+				pre(c, w)
+				br(c, w)
+				fmt.Fprint(w, "```\n\n")
 			case "blockquote":
 				br(c, w)
 				if hasClass(c, "code") {
-					fmt.Fprint(w, "\n```\n")
-					walk(c, w, nest)
+					fmt.Fprint(w, "```\n")
+					pre(c, w)
 					br(c, w)
 					fmt.Fprint(w, "```\n")
 				} else {
