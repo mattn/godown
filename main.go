@@ -45,17 +45,19 @@ func attr(node *html.Node, key string) string {
 }
 
 func br(node *html.Node, w io.Writer) {
+	node = node.PrevSibling
 	if node == nil {
 		return
 	}
 	switch node.Type {
 	case html.TextNode:
-		if node.Data != "" && !strings.HasSuffix(node.Data, "\n") {
+		text := strings.Trim(node.Data, " ")
+		if text != "" && !strings.HasSuffix(text, "\n") {
 			fmt.Fprint(w, "\n")
 		}
 	case html.ElementNode:
 		switch strings.ToLower(node.Data) {
-		case "html", "br", "p", "ul", "ol", "blockquote":
+		case "p", "ul", "ol", "div", "blockquote":
 			fmt.Fprint(w, "\n")
 		}
 	}
@@ -90,7 +92,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 			case "br":
 				fmt.Fprint(w, "\n")
 			case "p":
-				br(c.PrevSibling, w)
+				br(c, w)
 				fmt.Fprint(w, "\n")
 				walk(c, w, nest)
 				fmt.Fprint(w, "\n")
@@ -100,16 +102,16 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				fmt.Fprint(w, "`")
 			case "blockquote":
 				if hasClass(c, "code") {
-					br(c.PrevSibling, w)
+					br(c, w)
 					fmt.Fprint(w, "\n```\n")
 					walk(c, w, nest)
-					br(c.PrevSibling, w)
+					br(c, w)
 					fmt.Fprint(w, "```\n")
 				} else {
 					var buf bytes.Buffer
 					walk(c, &buf, nest)
 
-					br(c.PrevSibling, w)
+					br(c, w)
 					fmt.Fprint(w, "\n")
 					for _, l := range strings.Split(buf.String(), "\n") {
 						if l != "" {
@@ -119,11 +121,9 @@ func walk(node *html.Node, w io.Writer, nest int) {
 					fmt.Fprint(w, "\n")
 				}
 			case "ul", "ol":
-				// FIXME: make indentation for the nest level
 				walk(c, w, nest+1)
-				fmt.Fprint(w, "\n")
 			case "li":
-				br(c.PrevSibling, w)
+				br(c, w)
 				fmt.Fprint(w, strings.Repeat("  ", nest-1))
 				if isChildOf(c, "ul") {
 					fmt.Fprint(w, "* ")
@@ -134,7 +134,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				walk(c, w, nest)
 				fmt.Fprint(w, "\n")
 			case "h1", "h2", "h3", "h4", "h5", "h6":
-				br(c.PrevSibling, w)
+				br(c, w)
 				fmt.Fprint(w, "\n")
 				fmt.Fprint(w, strings.Repeat("#", int(rune(c.Data[1])-rune('0')))+" ")
 				walk(c, w, nest)
@@ -142,7 +142,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 			case "img":
 				fmt.Fprint(w, "!["+attr(c, "alt")+"]("+attr(c, "src")+")")
 			case "hr":
-				br(c.PrevSibling, w)
+				br(c, w)
 				fmt.Fprint(w, "\n---\n")
 			default:
 				walk(c, w, nest)
@@ -153,10 +153,28 @@ func walk(node *html.Node, w io.Writer, nest int) {
 	}
 }
 
+func firstBody(node *html.Node) *html.Node {
+loop:
+	for c := node.FirstChild; c != nil; c = c.NextSibling {
+		if c.Type == html.ElementNode {
+			if c.Data == "body" {
+				node = c
+				break loop
+			}
+			if found := firstBody(c); found != c {
+				node = found
+				break loop
+			}
+		}
+	}
+	return node
+}
+
 func main() {
 	doc, err := html.Parse(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
 	walk(doc, os.Stdout, 0)
+	fmt.Fprint(os.Stdout, "\n")
 }

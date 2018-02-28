@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -28,16 +29,17 @@ func TestGodown(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		doc = firstBody(doc)
 		var buf bytes.Buffer
 		walk(doc, &buf, 0)
-		br(doc.LastChild, &buf)
+		fmt.Fprint(&buf, "\n")
 
 		b, err := ioutil.ReadFile(file[:len(file)-4] + "md")
 		if err != nil {
 			t.Fatal(err)
 		}
 		if string(b) != buf.String() {
-			t.Fatalf("want %q, but got %q", string(b), buf.String())
+			t.Errorf("(%s): want %q, but got %q", file, string(b), buf.String())
 		}
 		f.Close()
 	}
