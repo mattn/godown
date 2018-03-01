@@ -58,6 +58,16 @@ func br(node *html.Node, w io.Writer) {
 	}
 }
 
+func bq(node *html.Node, w io.Writer) {
+	if node.Type == html.TextNode {
+		fmt.Fprint(w, node.Data)
+	} else {
+		for c := node.FirstChild; c != nil; c = c.NextSibling {
+			bq(c, w)
+		}
+	}
+}
+
 func pre(node *html.Node, w io.Writer) {
 	if node.Type == html.TextNode {
 		fmt.Fprint(w, node.Data)
@@ -143,7 +153,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				var buf bytes.Buffer
 				if hasClass(c, "code") {
 					fmt.Fprint(w, "```\n")
-					pre(c, &buf)
+					bq(c, &buf)
 					fmt.Fprint(w, buf.String())
 					if !strings.HasSuffix(buf.String(), "\n") {
 						fmt.Fprint(w, "\n")
