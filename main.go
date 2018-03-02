@@ -52,7 +52,7 @@ func br(node *html.Node, w io.Writer) {
 		}
 	case html.ElementNode:
 		switch strings.ToLower(node.Data) {
-		case "p", "ul", "ol", "div", "blockquote", "h1", "h2", "h3", "h4", "h5", "h6":
+		case "br", "p", "ul", "ol", "div", "blockquote", "h1", "h2", "h3", "h4", "h5", "h6":
 			fmt.Fprint(w, "\n")
 		}
 	}
@@ -126,6 +126,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				walk(c, w, nest)
 				fmt.Fprint(w, "~~")
 			case "br":
+				br(c, w)
 				fmt.Fprint(w, "\n")
 			case "p":
 				br(c, w)
@@ -153,7 +154,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				var buf bytes.Buffer
 				if hasClass(c, "code") {
 					bq(c, &buf)
-					fmt.Fprint(w, "```\n")
+					fmt.Fprint(w, "\n```\n")
 					fmt.Fprint(w, strings.TrimLeft(buf.String(), "\n"))
 					if !strings.HasSuffix(buf.String(), "\n") {
 						fmt.Fprint(w, "\n")
