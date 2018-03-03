@@ -2,6 +2,7 @@ package godown
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,9 +15,7 @@ func TestGodown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sort.Slice(m, func(i, j int) bool {
-		return m[i] < m[j]
-	})
+	sort.Strings(m)
 	for _, file := range m {
 		f, err := os.Open(file)
 		if err != nil {
@@ -35,5 +34,20 @@ func TestGodown(t *testing.T) {
 			t.Errorf("(%s):\nwant:\n%s}}}\ngot:\n%s}}}\n", file, string(b), buf.String())
 		}
 		f.Close()
+	}
+}
+
+type errReader int
+
+func (e errReader) Read(p []byte) (n int, err error) {
+	return 0, io.ErrUnexpectedEOF
+}
+
+func TestError(t *testing.T) {
+	var buf bytes.Buffer
+	var e errReader
+	err := Convert(&buf, e)
+	if err == nil {
+		t.Fatal("should be an error")
 	}
 }
