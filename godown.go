@@ -285,23 +285,6 @@ func walk(node *html.Node, w io.Writer, nest int) {
 	}
 }
 
-func firstBody(node *html.Node) *html.Node {
-loop:
-	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		if c.Type == html.ElementNode {
-			if c.Data == "body" {
-				node = c
-				break loop
-			}
-			if found := firstBody(c); found != c {
-				node = found
-				break loop
-			}
-		}
-	}
-	return node
-}
-
 func Convert(w io.Writer, r io.Reader) error {
 	doc, err := html.Parse(r)
 	if err != nil {
