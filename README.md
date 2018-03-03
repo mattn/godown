@@ -13,12 +13,11 @@ $ godown < index.html > index.md
 ## Installation
 
 ```
-$ go get github.com/mattn/godown
+$ go get github.com/mattn/godown/cmd/godown
 ```
 
 ## TODO
 
-* table tag
 * nested ul/ol should make indentation
 
 ## License

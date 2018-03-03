@@ -1,11 +1,9 @@
-package main
+package godown
 
 import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
-	"os"
 	"regexp"
 	"strings"
 
@@ -304,11 +302,12 @@ loop:
 	return node
 }
 
-func main() {
-	doc, err := html.Parse(os.Stdin)
+func Convert(w io.Writer, r io.Reader) error {
+	doc, err := html.Parse(r)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	walk(doc, os.Stdout, 0)
-	fmt.Fprint(os.Stdout, "\n")
+	walk(doc, w, 0)
+	fmt.Fprint(w, "\n")
+	return nil
 }

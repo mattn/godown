@@ -1,15 +1,12 @@
-package main
+package godown
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"testing"
-
-	"golang.org/x/net/html"
 )
 
 func TestGodown(t *testing.T) {
@@ -25,14 +22,10 @@ func TestGodown(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		doc, err := html.Parse(f)
-		if err != nil {
+		var buf bytes.Buffer
+		if err = Convert(&buf, f); err != nil {
 			t.Fatal(err)
 		}
-		doc = firstBody(doc)
-		var buf bytes.Buffer
-		walk(doc, &buf, 0)
-		fmt.Fprint(&buf, "\n")
 
 		b, err := ioutil.ReadFile(file[:len(file)-4] + "md")
 		if err != nil {
