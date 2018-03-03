@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/mattn/go-runewidth"
+
 	"golang.org/x/net/html"
 )
 
@@ -54,6 +56,84 @@ func br(node *html.Node, w io.Writer) {
 		switch strings.ToLower(node.Data) {
 		case "br", "p", "ul", "ol", "div", "blockquote", "h1", "h2", "h3", "h4", "h5", "h6":
 			fmt.Fprint(w, "\n")
+		}
+	}
+}
+
+func table(node *html.Node, w io.Writer) {
+	for tr := node.FirstChild; tr != nil; tr = tr.NextSibling {
+		if tr.Type == html.ElementNode && strings.ToLower(tr.Data) == "tbody" {
+			node = tr
+			break
+		}
+	}
+	var header bool
+	var rows [][]string
+	for tr := node.FirstChild; tr != nil; tr = tr.NextSibling {
+		if tr.Type != html.ElementNode || strings.ToLower(tr.Data) != "tr" {
+			continue
+		}
+		var cols []string
+		if !header {
+			for th := tr.FirstChild; th != nil; th = th.NextSibling {
+				if th.Type != html.ElementNode || strings.ToLower(th.Data) != "th" {
+					continue
+				}
+				var buf bytes.Buffer
+				walk(th, &buf, 0)
+				cols = append(cols, buf.String())
+			}
+			if len(cols) > 0 {
+				rows = append(rows, cols)
+				header = true
+				continue
+			}
+		}
+		for td := tr.FirstChild; td != nil; td = td.NextSibling {
+			if td.Type != html.ElementNode || strings.ToLower(td.Data) != "td" {
+				continue
+			}
+			var buf bytes.Buffer
+			walk(td, &buf, 0)
+			cols = append(cols, buf.String())
+		}
+		rows = append(rows, cols)
+	}
+	maxcol := 0
+	for _, cols := range rows {
+		if len(cols) > maxcol {
+			maxcol = len(cols)
+		}
+	}
+	widths := make([]int, maxcol)
+	for _, cols := range rows {
+		for i := 0; i < maxcol; i++ {
+			if i < len(cols) {
+				width := runewidth.StringWidth(cols[i])
+				if widths[i] < width {
+					widths[i] = width
+				}
+			}
+		}
+	}
+	for i, cols := range rows {
+		for j := 0; j < maxcol; j++ {
+			fmt.Fprint(w, "|")
+			if j < len(cols) {
+				width := runewidth.StringWidth(cols[j])
+				fmt.Fprint(w, cols[j])
+				fmt.Fprint(w, strings.Repeat(" ", widths[j]-width))
+			} else {
+				fmt.Fprint(w, strings.Repeat(" ", widths[j]))
+			}
+		}
+		fmt.Fprint(w, "|\n")
+		if i == 0 && header {
+			for j := 0; j < maxcol; j++ {
+				fmt.Fprint(w, "|")
+				fmt.Fprint(w, strings.Repeat("-", widths[j]))
+			}
+			fmt.Fprint(w, "|\n")
 		}
 	}
 }
@@ -194,6 +274,9 @@ func walk(node *html.Node, w io.Writer, nest int) {
 			case "hr":
 				br(c, w)
 				fmt.Fprint(w, "\n---\n")
+			case "table":
+				br(c, w)
+				table(c, w)
 			default:
 				walk(c, w, nest)
 			}
