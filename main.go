@@ -136,6 +136,7 @@ func table(node *html.Node, w io.Writer) {
 			fmt.Fprint(w, "|\n")
 		}
 	}
+	fmt.Fprint(w, "\n")
 }
 
 func bq(node *html.Node, w io.Writer) {
