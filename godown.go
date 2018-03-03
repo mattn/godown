@@ -139,7 +139,7 @@ func table(node *html.Node, w io.Writer) {
 
 func bq(node *html.Node, w io.Writer) {
 	if node.Type == html.TextNode {
-		fmt.Fprint(w, node.Data)
+		fmt.Fprint(w, strings.Replace(node.Data, "\u00a0", " ", -1))
 	} else {
 		for c := node.FirstChild; c != nil; c = c.NextSibling {
 			bq(c, w)
