@@ -285,6 +285,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 	}
 }
 
+// Convert convert HTML to Markdown. Read HTML from r and write to w.
 func Convert(w io.Writer, r io.Reader) error {
 	doc, err := html.Parse(r)
 	if err != nil {
