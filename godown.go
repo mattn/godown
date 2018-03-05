@@ -20,7 +20,7 @@ func isChildOf(node *html.Node, name string) bool {
 func hasClass(node *html.Node, clazz string) bool {
 	for _, attr := range node.Attr {
 		if attr.Key == "class" {
-			for _, c := range strings.Split(attr.Val, " ") {
+			for _, c := range strings.Fields(attr.Val) {
 				if c == clazz {
 					return true
 				}
