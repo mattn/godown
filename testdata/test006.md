@@ -16,4 +16,8 @@ void main(void) {
 }
 ```
 
+```
+foo
+```
+
 
