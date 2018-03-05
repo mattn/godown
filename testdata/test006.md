@@ -6,13 +6,13 @@ void main(void) {
 
 ```
 void main(void) {
-  puts("<b>hello world</b>");
+  puts("hello world");
 }
 ```
 
 ```
 void main(void) {
-  puts("<b>hello world</b>");
+  puts("hello world");
 }
 ```
 

@@ -152,26 +152,7 @@ func pre(node *html.Node, w io.Writer) {
 		fmt.Fprint(w, node.Data)
 	} else {
 		for c := node.FirstChild; c != nil; c = c.NextSibling {
-			switch c.Type {
-			case html.ElementNode:
-				if strings.ToLower(c.Data) == "code" {
-					pre(c, w)
-					return
-				}
-				fmt.Fprintf(w, "<%s", c.Data)
-				for _, attr := range c.Attr {
-					fmt.Fprintf(w, " %s=%q", attr.Key, attr.Val)
-				}
-				fmt.Fprint(w, ">")
-				if c.FirstChild != nil {
-					pre(c, w)
-					fmt.Fprintf(w, "</%s>", c.Data)
-				} else {
-					fmt.Fprint(w, "/>")
-				}
-			default:
-				pre(c, w)
-			}
+			pre(c, w)
 		}
 	}
 }
