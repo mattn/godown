@@ -231,7 +231,6 @@ func walk(node *html.Node, w io.Writer, nest int) {
 			case "div":
 				br(c, w)
 				walk(c, w, nest)
-				fmt.Fprint(w, "\n")
 			case "blockquote":
 				br(c, w)
 				var buf bytes.Buffer
