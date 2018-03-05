@@ -235,11 +235,20 @@ func walk(node *html.Node, w io.Writer, nest int) {
 					}
 				}
 			case "ul", "ol":
-				walk(c, w, nest+1)
-				fmt.Fprint(w, "\n")
+				br(c, w)
+				var buf bytes.Buffer
+				walk(c, &buf, 1)
+				if lines := strings.Split(strings.TrimSpace(buf.String()), "\n"); len(lines) > 0 {
+					for i, l := range lines {
+						if i > 0 || nest > 0 {
+							fmt.Fprint(w, "\n")
+						}
+						fmt.Fprint(w, strings.Repeat("    ", nest)+strings.TrimSpace(l))
+					}
+					fmt.Fprint(w, "\n")
+				}
 			case "li":
 				br(c, w)
-				fmt.Fprint(w, strings.Repeat("  ", nest-1))
 				if isChildOf(c, "ul") {
 					fmt.Fprint(w, "* ")
 				} else if isChildOf(c, "ol") {
