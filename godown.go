@@ -46,7 +46,7 @@ func br(node *html.Node, w io.Writer) {
 	}
 	switch node.Type {
 	case html.TextNode:
-		text := strings.Trim(node.Data, " ")
+		text := strings.Trim(node.Data, " \t")
 		if text != "" && !strings.HasSuffix(text, "\n") {
 			fmt.Fprint(w, "\n")
 		}
