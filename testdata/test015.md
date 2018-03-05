@@ -1,4 +1,3 @@
-
 ```
 package main
 
@@ -9,6 +8,10 @@ import (
 func main() {
     fmt.Println("hello world")
 }
+```
+
+```
+foo
 ```
 
 

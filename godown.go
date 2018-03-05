@@ -237,7 +237,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				var buf bytes.Buffer
 				if hasClass(c, "code") {
 					bq(c, &buf)
-					fmt.Fprint(w, "\n```\n")
+					fmt.Fprint(w, "```\n")
 					fmt.Fprint(w, strings.TrimLeft(buf.String(), "\n"))
 					if !strings.HasSuffix(buf.String(), "\n") {
 						fmt.Fprint(w, "\n")
