@@ -276,7 +276,7 @@ func walk(node *html.Node, w io.Writer, nest int) {
 				fmt.Fprint(w, "!["+attr(c, "alt")+"]("+attr(c, "src")+")")
 			case "hr":
 				br(c, w)
-				fmt.Fprint(w, "\n---\n")
+				fmt.Fprint(w, "\n---\n\n")
 			case "table":
 				br(c, w)
 				table(c, w)
