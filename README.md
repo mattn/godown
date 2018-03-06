@@ -23,6 +23,8 @@ $ go get github.com/mattn/godown/cmd/godown
 
 ## TODO
 
+* escape strings in HTML
+
 ## License
 
 MIT
