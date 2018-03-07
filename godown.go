@@ -39,7 +39,7 @@ func attr(node *html.Node, key string) string {
 	return ""
 }
 
-func br(node *html.Node, w io.Writer, options []Option) {
+func br(node *html.Node, w io.Writer, options *Option) {
 	node = node.PrevSibling
 	if node == nil {
 		return
@@ -58,7 +58,7 @@ func br(node *html.Node, w io.Writer, options []Option) {
 	}
 }
 
-func table(node *html.Node, w io.Writer, options []Option) {
+func table(node *html.Node, w io.Writer, options *Option) {
 	for tr := node.FirstChild; tr != nil; tr = tr.NextSibling {
 		if tr.Type == html.ElementNode && strings.ToLower(tr.Data) == "tbody" {
 			node = tr
@@ -137,7 +137,7 @@ func table(node *html.Node, w io.Writer, options []Option) {
 	fmt.Fprint(w, "\n")
 }
 
-func bq(node *html.Node, w io.Writer, options []Option) {
+func bq(node *html.Node, w io.Writer, options *Option) {
 	if node.Type == html.TextNode {
 		fmt.Fprint(w, strings.Replace(node.Data, "\u00a0", " ", -1))
 	} else {
@@ -147,7 +147,7 @@ func bq(node *html.Node, w io.Writer, options []Option) {
 	}
 }
 
-func pre(node *html.Node, w io.Writer, options []Option) {
+func pre(node *html.Node, w io.Writer, options *Option) {
 	if node.Type == html.TextNode {
 		fmt.Fprint(w, node.Data)
 	} else {
@@ -157,7 +157,7 @@ func pre(node *html.Node, w io.Writer, options []Option) {
 	}
 }
 
-func walk(node *html.Node, w io.Writer, nest int, options []Option) {
+func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 	if node.Type == html.TextNode {
 		if strings.TrimSpace(node.Data) != "" {
 			text := regexp.MustCompile(`[[:space:]][[:space:]]*`).ReplaceAllString(strings.Trim(node.Data, "\t\r\n"), " ")
@@ -171,61 +171,69 @@ func walk(node *html.Node, w io.Writer, nest int, options []Option) {
 			switch strings.ToLower(c.Data) {
 			case "a":
 				fmt.Fprint(w, "[")
-				walk(c, w, nest, options)
+				walk(c, w, nest, option)
 				fmt.Fprint(w, "]("+attr(c, "href")+")")
 			case "b", "strong":
 				fmt.Fprint(w, "**")
-				walk(c, w, nest, options)
+				walk(c, w, nest, option)
 				fmt.Fprint(w, "**")
 			case "i", "em":
 				fmt.Fprint(w, "_")
-				walk(c, w, nest, options)
+				walk(c, w, nest, option)
 				fmt.Fprint(w, "_")
 			case "del":
 				fmt.Fprint(w, "~~")
-				walk(c, w, nest, options)
+				walk(c, w, nest, option)
 				fmt.Fprint(w, "~~")
 			case "br":
-				br(c, w, options)
+				br(c, w, option)
 				fmt.Fprint(w, "\n\n")
 			case "p":
-				br(c, w, options)
-				walk(c, w, nest, options)
-				br(c, w, options)
+				br(c, w, option)
+				walk(c, w, nest, option)
+				br(c, w, option)
 				fmt.Fprint(w, "\n\n")
 			case "code":
 				if !isChildOf(c, "pre") {
 					fmt.Fprint(w, "`")
-					pre(c, w, options)
+					pre(c, w, option)
 					fmt.Fprint(w, "`")
 				}
 			case "pre":
-				br(c, w, options)
-				fmt.Fprint(w, "```\n")
+				br(c, w, option)
 				var buf bytes.Buffer
-				pre(c, &buf, options)
+				pre(c, &buf, option)
+				var lang string
+				if option != nil && option.GuessLang != nil {
+					lang = option.GuessLang(buf.String())
+				}
+				fmt.Fprint(w, "```"+lang+"\n")
 				fmt.Fprint(w, buf.String())
 				if !strings.HasSuffix(buf.String(), "\n") {
 					fmt.Fprint(w, "\n")
 				}
 				fmt.Fprint(w, "```\n\n")
 			case "div":
-				br(c, w, options)
-				walk(c, w, nest, options)
+				br(c, w, option)
+				walk(c, w, nest, option)
 				fmt.Fprint(w, "\n")
 			case "blockquote":
-				br(c, w, options)
+				br(c, w, option)
 				var buf bytes.Buffer
 				if hasClass(c, "code") {
-					bq(c, &buf, options)
-					fmt.Fprint(w, "```\n")
+					bq(c, &buf, option)
+					var lang string
+					if option != nil && option.GuessLang != nil {
+						lang = option.GuessLang(buf.String())
+					}
+					fmt.Fprint(w, "```"+lang+"\n")
 					fmt.Fprint(w, strings.TrimLeft(buf.String(), "\n"))
 					if !strings.HasSuffix(buf.String(), "\n") {
 						fmt.Fprint(w, "\n")
 					}
 					fmt.Fprint(w, "```\n\n")
 				} else {
-					walk(c, &buf, nest+1, options)
+					walk(c, &buf, nest+1, option)
 
 					if lines := strings.Split(strings.TrimSpace(buf.String()), "\n"); len(lines) > 0 {
 						for _, l := range lines {
@@ -235,9 +243,9 @@ func walk(node *html.Node, w io.Writer, nest int, options []Option) {
 					}
 				}
 			case "ul", "ol":
-				br(c, w, options)
+				br(c, w, option)
 				var buf bytes.Buffer
-				walk(c, &buf, 1, options)
+				walk(c, &buf, 1, option)
 				if lines := strings.Split(strings.TrimSpace(buf.String()), "\n"); len(lines) > 0 {
 					for i, l := range lines {
 						if i > 0 || nest > 0 {
@@ -248,46 +256,48 @@ func walk(node *html.Node, w io.Writer, nest int, options []Option) {
 					fmt.Fprint(w, "\n")
 				}
 			case "li":
-				br(c, w, options)
+				br(c, w, option)
 				if isChildOf(c, "ul") {
 					fmt.Fprint(w, "* ")
 				} else if isChildOf(c, "ol") {
 					n++
 					fmt.Fprint(w, fmt.Sprintf("%d. ", n))
 				}
-				walk(c, w, nest, options)
+				walk(c, w, nest, option)
 				fmt.Fprint(w, "\n")
 			case "h1", "h2", "h3", "h4", "h5", "h6":
-				br(c, w, options)
+				br(c, w, option)
 				fmt.Fprint(w, strings.Repeat("#", int(rune(c.Data[1])-rune('0')))+" ")
-				walk(c, w, nest, options)
+				walk(c, w, nest, option)
 				fmt.Fprint(w, "\n\n")
 			case "img":
 				fmt.Fprint(w, "!["+attr(c, "alt")+"]("+attr(c, "src")+")")
 			case "hr":
-				br(c, w, options)
+				br(c, w, option)
 				fmt.Fprint(w, "\n---\n\n")
 			case "table":
-				br(c, w, options)
-				table(c, w, options)
+				br(c, w, option)
+				table(c, w, option)
 			default:
-				walk(c, w, nest, options)
+				walk(c, w, nest, option)
 			}
 		default:
-			walk(c, w, nest, options)
+			walk(c, w, nest, option)
 		}
 	}
 }
 
-type Option func(node *html.Node, w io.Writer) bool
+type Option struct {
+	GuessLang func(string) string
+}
 
 // Convert convert HTML to Markdown. Read HTML from r and write to w.
-func Convert(w io.Writer, r io.Reader, options ...Option) error {
+func Convert(w io.Writer, r io.Reader, option *Option) error {
 	doc, err := html.Parse(r)
 	if err != nil {
 		return err
 	}
-	walk(doc, w, 0, options)
+	walk(doc, w, 0, option)
 	fmt.Fprint(w, "\n")
 	return nil
 }
