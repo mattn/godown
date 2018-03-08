@@ -12,6 +12,14 @@ This is work in progress.
 ## Usage
 
 ```
+err := godown.Convert(w, r)
+checkError(err)
+```
+
+
+## Command Line
+
+```
 $ godown < index.html > index.md
 ```
 
