@@ -205,7 +205,9 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 				pre(c, &buf, option)
 				var lang string
 				if option != nil && option.GuessLang != nil {
-					lang = option.GuessLang(buf.String())
+					if guess, err := option.GuessLang(buf.String()); err == nil {
+						lang = guess
+					}
 				}
 				fmt.Fprint(w, "```"+lang+"\n")
 				fmt.Fprint(w, buf.String())
@@ -224,7 +226,9 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 					bq(c, &buf, option)
 					var lang string
 					if option != nil && option.GuessLang != nil {
-						lang = option.GuessLang(buf.String())
+						if guess, err := option.GuessLang(buf.String()); err == nil {
+							lang = guess
+						}
 					}
 					fmt.Fprint(w, "```"+lang+"\n")
 					fmt.Fprint(w, strings.TrimLeft(buf.String(), "\n"))
@@ -288,7 +292,7 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 }
 
 type Option struct {
-	GuessLang func(string) string
+	GuessLang func(string) (string, error)
 }
 
 // Convert convert HTML to Markdown. Read HTML from r and write to w.

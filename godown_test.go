@@ -61,7 +61,7 @@ def do_something():
   pass
 </pre>
 	`), &Option{
-		GuessLang: func(s string) string { return "python" },
+		GuessLang: func(s string) (string, error) { return "python", nil },
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -80,7 +80,7 @@ func TestGuessLangBq(t *testing.T) {
   <i>pass</i>
 </blockquote>
 	`), &Option{
-		GuessLang: func(s string) string { return "python" },
+		GuessLang: func(s string) (string, error) { return "python", nil },
 	})
 	if err != nil {
 		t.Fatal(err)
