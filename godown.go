@@ -214,6 +214,10 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 	n := 0
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
 		switch c.Type {
+		case html.CommentNode:
+			fmt.Fprint(w, "<!--")
+			fmt.Fprint(w, c.Data)
+			fmt.Fprint(w, "-->\n")
 		case html.ElementNode:
 			switch strings.ToLower(c.Data) {
 			case "a":
