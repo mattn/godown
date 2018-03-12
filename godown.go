@@ -39,7 +39,7 @@ func attr(node *html.Node, key string) string {
 	return ""
 }
 
-func br(node *html.Node, w io.Writer, options *Option) {
+func br(node *html.Node, w io.Writer, option *Option) {
 	node = node.PrevSibling
 	if node == nil {
 		return
@@ -58,7 +58,7 @@ func br(node *html.Node, w io.Writer, options *Option) {
 	}
 }
 
-func table(node *html.Node, w io.Writer, options *Option) {
+func table(node *html.Node, w io.Writer, option *Option) {
 	for tr := node.FirstChild; tr != nil; tr = tr.NextSibling {
 		if tr.Type == html.ElementNode && strings.ToLower(tr.Data) == "tbody" {
 			node = tr
@@ -78,7 +78,7 @@ func table(node *html.Node, w io.Writer, options *Option) {
 					continue
 				}
 				var buf bytes.Buffer
-				walk(th, &buf, 0, options)
+				walk(th, &buf, 0, option)
 				cols = append(cols, buf.String())
 			}
 			if len(cols) > 0 {
@@ -92,7 +92,7 @@ func table(node *html.Node, w io.Writer, options *Option) {
 				continue
 			}
 			var buf bytes.Buffer
-			walk(td, &buf, 0, options)
+			walk(td, &buf, 0, option)
 			cols = append(cols, buf.String())
 		}
 		rows = append(rows, cols)
@@ -137,22 +137,69 @@ func table(node *html.Node, w io.Writer, options *Option) {
 	fmt.Fprint(w, "\n")
 }
 
-func bq(node *html.Node, w io.Writer, options *Option) {
+var emptyElements = []string{
+	"area",
+	"base",
+	"br",
+	"col",
+	"embed",
+	"hr",
+	"img",
+	"input",
+	"keygen",
+	"link",
+	"meta",
+	"param",
+	"source",
+	"track",
+	"wbr",
+}
+
+func raw(node *html.Node, w io.Writer, option *Option) {
+	switch node.Type {
+	case html.ElementNode:
+		fmt.Fprintf(w, "<%s", node.Data)
+		for _, attr := range node.Attr {
+			fmt.Fprintf(w, " %s=%q", attr.Key, attr.Val)
+		}
+		found := false
+		tag := strings.ToLower(node.Data)
+		for _, e := range emptyElements {
+			if e == tag {
+				found = true
+				break
+			}
+		}
+		if found {
+			fmt.Fprint(w, "/>")
+		} else {
+			fmt.Fprint(w, ">")
+			for c := node.FirstChild; c != nil; c = c.NextSibling {
+				raw(c, w, option)
+			}
+			fmt.Fprintf(w, "</%s>", node.Data)
+		}
+	case html.TextNode:
+		fmt.Fprint(w, node.Data)
+	}
+}
+
+func bq(node *html.Node, w io.Writer, option *Option) {
 	if node.Type == html.TextNode {
 		fmt.Fprint(w, strings.Replace(node.Data, "\u00a0", " ", -1))
 	} else {
 		for c := node.FirstChild; c != nil; c = c.NextSibling {
-			bq(c, w, options)
+			bq(c, w, option)
 		}
 	}
 }
 
-func pre(node *html.Node, w io.Writer, options *Option) {
+func pre(node *html.Node, w io.Writer, option *Option) {
 	if node.Type == html.TextNode {
 		fmt.Fprint(w, node.Data)
 	} else {
 		for c := node.FirstChild; c != nil; c = c.NextSibling {
-			pre(c, w, options)
+			pre(c, w, option)
 		}
 	}
 }
@@ -282,6 +329,18 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 			case "table":
 				br(c, w, option)
 				table(c, w, option)
+			case "style":
+				if option != nil && option.Style {
+					br(c, w, option)
+					raw(c, w, option)
+					fmt.Fprint(w, "\n\n")
+				}
+			case "script":
+				if option != nil && option.Script {
+					br(c, w, option)
+					raw(c, w, option)
+					fmt.Fprint(w, "\n\n")
+				}
 			default:
 				walk(c, w, nest, option)
 			}
@@ -293,6 +352,8 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 
 type Option struct {
 	GuessLang func(string) (string, error)
+	Script    bool
+	Style     bool
 }
 
 // Convert convert HTML to Markdown. Read HTML from r and write to w.
