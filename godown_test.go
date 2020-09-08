@@ -2,6 +2,7 @@ package godown
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -9,6 +10,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"golang.org/x/net/html"
 )
 
 func TestGodown(t *testing.T) {
@@ -147,6 +150,33 @@ body {
 --></style>
 
 
+`
+	if buf.String() != want {
+		t.Errorf("\nwant:\n%s}}}\ngot:\n%s}}}\n", want, buf.String())
+	}
+}
+
+type TestRule struct{}
+
+func (r *TestRule) Rule(next WalkFunc) (string, WalkFunc) {
+	return "test", func(node *html.Node, w io.Writer, nest int, option *Option) {
+		fmt.Fprint(w, "_")
+		next(node, w, nest, option)
+		fmt.Fprint(w, "_")
+	}
+}
+
+func TestCustomRules(t *testing.T) {
+	var buf bytes.Buffer
+	err := Convert(&buf, strings.NewReader(`
+<test>here is the text in custom tag</test>
+	`), &Option{
+		CustomRules: []CustomRule{&TestRule{}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `_here is the text in custom tag_
 `
 	if buf.String() != want {
 		t.Errorf("\nwant:\n%s}}}\ngot:\n%s}}}\n", want, buf.String())
