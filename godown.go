@@ -42,16 +42,14 @@ func attr(node *html.Node, key string) string {
 // Gets the language of a code block based on the class
 // See: https://spec.commonmark.org/0.29/#example-112
 func langFromClass(node *html.Node) string {
-	var lang string
-
 	if node.FirstChild == nil || strings.ToLower(node.FirstChild.Data) != "code" {
-		return lang
+		return ""
 	}
 
 	fChild := node.FirstChild
 	classes := strings.Split(attr(fChild, "class"), " ")
 	if len(classes) == 0 {
-		return lang
+		return ""
 	}
 
 	prefix := "language-"
@@ -59,10 +57,10 @@ func langFromClass(node *html.Node) string {
 		if !strings.HasPrefix(class, prefix) {
 			continue
 		}
-		lang = strings.TrimPrefix(class, prefix)
+		return strings.TrimPrefix(class, prefix)
 	}
 
-	return lang
+	return ""
 }
 
 func br(node *html.Node, w io.Writer, option *Option) {
