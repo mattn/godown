@@ -47,7 +47,7 @@ func langFromClass(node *html.Node) string {
 	}
 
 	fChild := node.FirstChild
-	classes := strings.Split(attr(fChild, "class"), " ")
+	classes := strings.Fields(attr(fChild, "class"))
 	if len(classes) == 0 {
 		return ""
 	}

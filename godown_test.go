@@ -78,7 +78,7 @@ def do_something():
 func TestGuessLangFromClass(t *testing.T) {
 	var buf bytes.Buffer
 	err := Convert(&buf, strings.NewReader(`
-<pre><code class="language-python">def do_something():
+<pre><code class="foo bar language-python">def do_something():
   pass
 </code></pre>
 	`), nil)
