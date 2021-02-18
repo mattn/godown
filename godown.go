@@ -39,6 +39,30 @@ func attr(node *html.Node, key string) string {
 	return ""
 }
 
+// Gets the language of a code block based on the class
+// See: https://spec.commonmark.org/0.29/#example-112
+func langFromClass(node *html.Node) string {
+	if node.FirstChild == nil || strings.ToLower(node.FirstChild.Data) != "code" {
+		return ""
+	}
+
+	fChild := node.FirstChild
+	classes := strings.Fields(attr(fChild, "class"))
+	if len(classes) == 0 {
+		return ""
+	}
+
+	prefix := "language-"
+	for _, class := range classes {
+		if !strings.HasPrefix(class, prefix) {
+			continue
+		}
+		return strings.TrimPrefix(class, prefix)
+	}
+
+	return ""
+}
+
 func br(node *html.Node, w io.Writer, option *Option) {
 	node = node.PrevSibling
 	if node == nil {
@@ -254,7 +278,7 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 				br(c, w, option)
 				var buf bytes.Buffer
 				pre(c, &buf, option)
-				var lang string
+				var lang string = langFromClass(c)
 				if option != nil && option.GuessLang != nil {
 					if guess, err := option.GuessLang(buf.String()); err == nil {
 						lang = guess

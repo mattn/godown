@@ -75,6 +75,22 @@ def do_something():
 	}
 }
 
+func TestGuessLangFromClass(t *testing.T) {
+	var buf bytes.Buffer
+	err := Convert(&buf, strings.NewReader(`
+<pre><code class="foo bar language-python">def do_something():
+  pass
+</code></pre>
+	`), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "```python\ndef do_something():\n  pass\n```\n\n\n"
+	if buf.String() != want {
+		t.Errorf("\nwant:\n%s}}}\ngot:\n%s}}}\n", want, buf.String())
+	}
+}
+
 func TestGuessLangBq(t *testing.T) {
 	var buf bytes.Buffer
 	err := Convert(&buf, strings.NewReader(`
