@@ -6,6 +6,7 @@ import (
 	"io"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/mattn/go-runewidth"
 
@@ -228,6 +229,36 @@ func pre(node *html.Node, w io.Writer, option *Option) {
 	}
 }
 
+// In the spec, https://spec.commonmark.org/0.29/#delimiter-run
+// A  left-flanking delimiter run should not followed by Unicode whitespace
+// A  right-flanking delimiter run should not preceded by Unicode whitespace
+// This will wrap the delimiter (such as **) around the non-whitespace contents, but preserve the whitespace
+func aroundNonWhitespace(node *html.Node, w io.Writer, nest int, option *Option, before, after string) {
+	buf := &bytes.Buffer{}
+	walk(node, buf, nest, option)
+	s := buf.String()
+
+	start := 0
+	for ; start < len(s); start++ {
+		c := s[start]
+		if !unicode.IsSpace(rune(c)) {
+			break
+		}
+	}
+
+	stop := len(s)
+	for ; stop > start; stop-- {
+		c := s[stop-1]
+		if !unicode.IsSpace(rune(c)) {
+			break
+		}
+	}
+
+	s = s[:start] + before + s[start:stop] + after + s[stop:]
+
+	fmt.Fprint(w, s)
+}
+
 func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 	if node.Type == html.TextNode {
 		if strings.TrimSpace(node.Data) != "" {
@@ -249,17 +280,11 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 				walk(c, w, nest, option)
 				fmt.Fprint(w, "]("+attr(c, "href")+")")
 			case "b", "strong":
-				fmt.Fprint(w, "**")
-				walk(c, w, nest, option)
-				fmt.Fprint(w, "**")
+				aroundNonWhitespace(c, w, nest, option, "**", "**")
 			case "i", "em":
-				fmt.Fprint(w, "_")
-				walk(c, w, nest, option)
-				fmt.Fprint(w, "_")
+				aroundNonWhitespace(c, w, nest, option, "_", "_")
 			case "del":
-				fmt.Fprint(w, "~~")
-				walk(c, w, nest, option)
-				fmt.Fprint(w, "~~")
+				aroundNonWhitespace(c, w, nest, option, "~~", "~~")
 			case "br":
 				br(c, w, option)
 				fmt.Fprint(w, "\n\n")

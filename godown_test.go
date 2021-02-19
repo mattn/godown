@@ -110,6 +110,20 @@ func TestGuessLangBq(t *testing.T) {
 	}
 }
 
+func TestWhiteSpaceDelimiter(t *testing.T) {
+	var buf bytes.Buffer
+	err := Convert(&buf, strings.NewReader(
+		`<strong> foo bar </strong>`,
+	), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := " **foo bar** \n"
+	if buf.String() != want {
+		t.Errorf("\nwant:\n%q}}}\ngot:\n%q}}}\n", want, buf.String())
+	}
+}
+
 func TestScript(t *testing.T) {
 	var buf bytes.Buffer
 	err := Convert(&buf, strings.NewReader(`
