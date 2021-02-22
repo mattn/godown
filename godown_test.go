@@ -124,6 +124,20 @@ func TestWhiteSpaceDelimiter(t *testing.T) {
 	}
 }
 
+func TestEmptyImageSrc(t *testing.T) {
+	var buf bytes.Buffer
+	err := Convert(&buf, strings.NewReader(
+		`<img src="" alt="foo bar">`,
+	), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "\n"
+	if buf.String() != want {
+		t.Errorf("\nwant:\n%q}}}\ngot:\n%q}}}\n", want, buf.String())
+	}
+}
+
 func TestScript(t *testing.T) {
 	var buf bytes.Buffer
 	err := Convert(&buf, strings.NewReader(`
