@@ -375,7 +375,11 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 				walk(c, w, nest, option)
 				fmt.Fprint(w, "\n\n")
 			case "img":
-				fmt.Fprint(w, "!["+attr(c, "alt")+"]("+attr(c, "src")+")")
+				src := attr(c, "src")
+				alt := attr(c, "alt")
+				if src != "" {
+					fmt.Fprintf(w, "![%s](%s)\n\n", alt, src)
+				}
 			case "hr":
 				br(c, w, option)
 				fmt.Fprint(w, "\n---\n\n")
