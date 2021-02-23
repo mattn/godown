@@ -238,6 +238,11 @@ func aroundNonWhitespace(node *html.Node, w io.Writer, nest int, option *Option,
 	walk(node, buf, nest, option)
 	s := buf.String()
 
+	// If the contents are simply whitespace, return without adding any delimiters
+	if strings.TrimSpace(s) == "" {
+		return
+	}
+
 	start := 0
 	for ; start < len(s); start++ {
 		c := s[start]
