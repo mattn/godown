@@ -111,6 +111,7 @@ func TestGuessLangBq(t *testing.T) {
 }
 
 func TestWhiteSpaceDelimiter(t *testing.T) {
+	// Test adding delimiters only on the inner contents
 	var buf bytes.Buffer
 	err := Convert(&buf, strings.NewReader(
 		`<strong> foo bar </strong>`,
@@ -121,6 +122,19 @@ func TestWhiteSpaceDelimiter(t *testing.T) {
 	want := " **foo bar** \n"
 	if buf.String() != want {
 		t.Errorf("\nwant:\n%q}}}\ngot:\n%q}}}\n", want, buf.String())
+	}
+
+	// Test that no delimiters are added if the contents is all whitespace
+	var buf2 bytes.Buffer
+	err = Convert(&buf2, strings.NewReader(
+		`<strong>  </strong>`,
+	), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = "\n"
+	if buf2.String() != want {
+		t.Errorf("\nwant:\n%q}}}\ngot:\n%q}}}\n", want, buf2.String())
 	}
 }
 
