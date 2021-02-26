@@ -276,9 +276,10 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 		case html.ElementNode:
 			switch strings.ToLower(c.Data) {
 			case "a":
-				fmt.Fprint(w, "[")
-				walk(c, w, nest, option)
-				fmt.Fprint(w, "]("+attr(c, "href")+")")
+				// Links are invalid in markdown if the link text extends beyond a single line
+				// So we render the contents and strip any spaces
+				href := attr(c, "href")
+				aroundNonWhitespace(c, w, nest, option, "[", fmt.Sprintf("](%s)", href))
 			case "b", "strong":
 				aroundNonWhitespace(c, w, nest, option, "**", "**")
 			case "i", "em":

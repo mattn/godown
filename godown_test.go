@@ -138,6 +138,20 @@ func TestEmptyImageSrc(t *testing.T) {
 	}
 }
 
+func TestBlockLink(t *testing.T) {
+	var buf bytes.Buffer
+	err := Convert(&buf, strings.NewReader(
+		`<a href="https://example.org"><img src="https://example.com/img" alt="foo bar"><div></div></a>`,
+	), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "[![foo bar](https://example.com/img)](https://example.org)\n\n"
+	if buf.String() != want {
+		t.Errorf("\nwant:\n%q}}}\ngot:\n%q}}}\n", want, buf.String())
+	}
+}
+
 func TestScript(t *testing.T) {
 	var buf bytes.Buffer
 	err := Convert(&buf, strings.NewReader(`
