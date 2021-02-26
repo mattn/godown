@@ -146,7 +146,7 @@ func TestBlockLink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "[![foo bar](https://example.com/img)](https://example.org)\n"
+	want := "[![foo bar](https://example.com/img)](https://example.org)\n\n"
 	if buf.String() != want {
 		t.Errorf("\nwant:\n%q}}}\ngot:\n%q}}}\n", want, buf.String())
 	}

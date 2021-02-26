@@ -278,12 +278,8 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 			case "a":
 				// Links are invalid in markdown if the link text extends beyond a single line
 				// So we render the contents and strip any spaces
-				// Especially useful when an image is used as a link
-				var buf bytes.Buffer
-				walk(c, &buf, nest, option)
-				inner := strings.TrimSpace(buf.String())
 				href := attr(c, "href")
-				fmt.Fprintf(w, "[%s](%s)", inner, href)
+				aroundNonWhitespace(c, w, nest, option, "[", fmt.Sprintf("](%s)", href))
 			case "b", "strong":
 				aroundNonWhitespace(c, w, nest, option, "**", "**")
 			case "i", "em":
