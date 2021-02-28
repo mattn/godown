@@ -13,6 +13,21 @@ import (
 	"golang.org/x/net/html"
 )
 
+// A regex to escape certain characters
+// \ : since this is the excape character, become weird if printed literally
+// * : Used to start bullet lists, and as a delimiter
+// _ : Used as a delimiter
+// ( and ) : Used in links and images
+// [ and ] : Used in links and images
+// < : can be used to mean "raw HTML" which is allowed
+// > : Used in raw HTML, also used to define blockquotes
+// # : Used for headings
+// + : Can be used for unordered lists
+// - : Can be used for unordered lists
+// ! : Used for images
+// ` : Used for code blocks
+var escapeRegex = regexp.MustCompile(`(` + `\\|\*|_|\[|\]|\(|\)|<|>|#|\+|-|!|` + "`" + `)`)
+
 func isChildOf(node *html.Node, name string) bool {
 	node = node.Parent
 	return node != nil && node.Type == html.ElementNode && strings.ToLower(node.Data) == name
@@ -236,15 +251,10 @@ func pre(node *html.Node, w io.Writer, option *Option) {
 func aroundNonWhitespace(node *html.Node, w io.Writer, nest int, option *Option, before, after string) {
 	buf := &bytes.Buffer{}
 
-	var newOption = Option{PreseveSpace: true}
+	var newOption = option.Clone()
+	newOption.PreseveSpace = true
 
-	// So we don't change the original option
-	if option != nil {
-		newOption = *option
-		newOption.PreseveSpace = true
-	}
-
-	walk(node, buf, nest, &newOption)
+	walk(node, buf, nest, newOption)
 	s := buf.String()
 
 	// If the contents are simply whitespace, return without adding any delimiters
@@ -276,8 +286,14 @@ func aroundNonWhitespace(node *html.Node, w io.Writer, nest int, option *Option,
 
 func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 	if node.Type == html.TextNode {
-		if (option != nil && option.PreseveSpace) || strings.TrimSpace(node.Data) != "" {
+		if option.PreseveSpace || strings.TrimSpace(node.Data) != "" {
 			text := regexp.MustCompile(`[[:space:]][[:space:]]*`).ReplaceAllString(strings.Trim(node.Data, "\t\r\n"), " ")
+
+			if !option.doNotEscape {
+				text = escapeRegex.ReplaceAllStringFunc(text, func(str string) string {
+					return `\` + str
+				})
+			}
 			fmt.Fprint(w, text)
 		}
 	}
@@ -317,17 +333,24 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 				}
 			case "pre":
 				br(c, w, option)
+
+				clone := option.Clone()
+				clone.doNotEscape = true
+
 				var buf bytes.Buffer
-				pre(c, &buf, option)
+				pre(c, &buf, clone)
+				inner := buf.String()
+
 				var lang string = langFromClass(c)
 				if option != nil && option.GuessLang != nil {
 					if guess, err := option.GuessLang(buf.String()); err == nil {
 						lang = guess
 					}
 				}
+
 				fmt.Fprint(w, "```"+lang+"\n")
-				fmt.Fprint(w, buf.String())
-				if !strings.HasSuffix(buf.String(), "\n") {
+				fmt.Fprint(w, inner)
+				if !strings.HasSuffix(inner, "\n") {
 					fmt.Fprint(w, "\n")
 				}
 				fmt.Fprint(w, "```\n\n")
@@ -415,7 +438,7 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 					fmt.Fprint(w, "\n\n")
 				}
 			default:
-				if option == nil || option.CustomRules == nil {
+				if option.CustomRules == nil {
 					walk(c, w, nest, option)
 					break
 				}
@@ -461,6 +484,18 @@ type Option struct {
 	Style        bool
 	PreseveSpace bool
 	CustomRules  []CustomRule
+	doNotEscape  bool // Used to know if to escape certain characters
+}
+
+// To make a copy of an option without changing the original
+func (o *Option) Clone() *Option {
+	if o == nil {
+		return nil
+	}
+
+	var clone Option
+	clone = *o
+	return &clone
 }
 
 // Convert convert HTML to Markdown. Read HTML from r and write to w.
@@ -468,6 +503,9 @@ func Convert(w io.Writer, r io.Reader, option *Option) error {
 	doc, err := html.Parse(r)
 	if err != nil {
 		return err
+	}
+	if option == nil {
+		option = &Option{}
 	}
 	walk(doc, w, 0, option)
 	fmt.Fprint(w, "\n")
