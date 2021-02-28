@@ -196,32 +196,7 @@ var emptyElements = []string{
 }
 
 func raw(node *html.Node, w io.Writer, option *Option) {
-	switch node.Type {
-	case html.ElementNode:
-		fmt.Fprintf(w, "<%s", node.Data)
-		for _, attr := range node.Attr {
-			fmt.Fprintf(w, " %s=%q", attr.Key, attr.Val)
-		}
-		found := false
-		tag := strings.ToLower(node.Data)
-		for _, e := range emptyElements {
-			if e == tag {
-				found = true
-				break
-			}
-		}
-		if found {
-			fmt.Fprint(w, "/>")
-		} else {
-			fmt.Fprint(w, ">")
-			for c := node.FirstChild; c != nil; c = c.NextSibling {
-				raw(c, w, option)
-			}
-			fmt.Fprintf(w, "</%s>", node.Data)
-		}
-	case html.TextNode:
-		fmt.Fprint(w, node.Data)
-	}
+	html.Render(w, node)
 }
 
 func bq(node *html.Node, w io.Writer, option *Option) {
