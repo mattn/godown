@@ -235,11 +235,21 @@ func pre(node *html.Node, w io.Writer, option *Option) {
 // This will wrap the delimiter (such as **) around the non-whitespace contents, but preserve the whitespace
 func aroundNonWhitespace(node *html.Node, w io.Writer, nest int, option *Option, before, after string) {
 	buf := &bytes.Buffer{}
-	walk(node, buf, nest, option)
+
+	var newOption = Option{PreseveSpace: true}
+
+	// So we don't change the original option
+	if option != nil {
+		newOption = *option
+		newOption.PreseveSpace = true
+	}
+
+	walk(node, buf, nest, &newOption)
 	s := buf.String()
 
 	// If the contents are simply whitespace, return without adding any delimiters
 	if strings.TrimSpace(s) == "" {
+		fmt.Fprint(w, s)
 		return
 	}
 
@@ -266,7 +276,7 @@ func aroundNonWhitespace(node *html.Node, w io.Writer, nest int, option *Option,
 
 func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 	if node.Type == html.TextNode {
-		if strings.TrimSpace(node.Data) != "" {
+		if (option != nil && option.PreseveSpace) || strings.TrimSpace(node.Data) != "" {
 			text := regexp.MustCompile(`[[:space:]][[:space:]]*`).ReplaceAllString(strings.Trim(node.Data, "\t\r\n"), " ")
 			fmt.Fprint(w, text)
 		}
@@ -446,10 +456,11 @@ type CustomRule interface {
 
 // Option is optional information for Convert.
 type Option struct {
-	GuessLang   func(string) (string, error)
-	Script      bool
-	Style       bool
-	CustomRules []CustomRule
+	GuessLang    func(string) (string, error)
+	Script       bool
+	Style        bool
+	PreseveSpace bool
+	CustomRules  []CustomRule
 }
 
 // Convert convert HTML to Markdown. Read HTML from r and write to w.

@@ -127,14 +127,27 @@ func TestWhiteSpaceDelimiter(t *testing.T) {
 	// Test that no delimiters are added if the contents is all whitespace
 	var buf2 bytes.Buffer
 	err = Convert(&buf2, strings.NewReader(
-		`<strong>  </strong>`,
+		`Hello<strong>  </strong>hi`,
 	), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want = "\n"
+	want = "Hello hi\n"
 	if buf2.String() != want {
 		t.Errorf("\nwant:\n%q}}}\ngot:\n%q}}}\n", want, buf2.String())
+	}
+
+	// Test that line breaks are preserved even if delimiters are not added
+	var buf3 bytes.Buffer
+	err = Convert(&buf3, strings.NewReader(
+		`<strong><br></strong>`,
+	), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = "\n\n\n"
+	if buf3.String() != want {
+		t.Errorf("\nwant:\n%q}}}\ngot:\n%q}}}\n", want, buf3.String())
 	}
 }
 
