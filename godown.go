@@ -361,10 +361,11 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 				}
 			case "ul", "ol":
 				br(c, w, option)
-				var buf bytes.Buffer
 
 				var newOption = option.Clone()
 				newOption.TrimSpace = true
+
+				var buf bytes.Buffer
 				walk(c, &buf, 1, newOption)
 				if lines := strings.Split(strings.TrimSpace(buf.String()), "\n"); len(lines) > 0 {
 					for i, l := range lines {
@@ -376,14 +377,18 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 					fmt.Fprint(w, "\n")
 				}
 			case "li":
-				br(c, w, option)
+				// To prevent trimming space inside the list items
+				var newOption = option.Clone()
+				newOption.TrimSpace = false
+
+				br(c, w, newOption)
 				if isChildOf(c, "ul") {
 					fmt.Fprint(w, "* ")
 				} else if isChildOf(c, "ol") {
 					n++
 					fmt.Fprint(w, fmt.Sprintf("%d. ", n))
 				}
-				walk(c, w, nest, option)
+				walk(c, w, nest, newOption)
 				fmt.Fprint(w, "\n")
 			case "h1", "h2", "h3", "h4", "h5", "h6":
 				br(c, w, option)
