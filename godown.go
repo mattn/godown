@@ -226,10 +226,7 @@ func pre(node *html.Node, w io.Writer, option *Option) {
 func aroundNonWhitespace(node *html.Node, w io.Writer, nest int, option *Option, before, after string) {
 	buf := &bytes.Buffer{}
 
-	var newOption = option.Clone()
-	newOption.PreseveSpace = true
-
-	walk(node, buf, nest, newOption)
+	walk(node, buf, nest, option)
 	s := buf.String()
 
 	// If the contents are simply whitespace, return without adding any delimiters
@@ -261,16 +258,18 @@ func aroundNonWhitespace(node *html.Node, w io.Writer, nest int, option *Option,
 
 func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 	if node.Type == html.TextNode {
-		if option.PreseveSpace || strings.TrimSpace(node.Data) != "" {
-			text := regexp.MustCompile(`[[:space:]][[:space:]]*`).ReplaceAllString(strings.Trim(node.Data, "\t\r\n"), " ")
-
-			if !option.doNotEscape {
-				text = escapeRegex.ReplaceAllStringFunc(text, func(str string) string {
-					return `\` + str
-				})
-			}
-			fmt.Fprint(w, text)
+		if option.TrimSpace && strings.TrimSpace(node.Data) == "" {
+			return
 		}
+
+		text := regexp.MustCompile(`[[:space:]][[:space:]]*`).ReplaceAllString(strings.Trim(node.Data, "\t\r\n"), " ")
+
+		if !option.doNotEscape {
+			text = escapeRegex.ReplaceAllStringFunc(text, func(str string) string {
+				return `\` + str
+			})
+		}
+		fmt.Fprint(w, text)
 	}
 	n := 0
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
@@ -363,7 +362,10 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 			case "ul", "ol":
 				br(c, w, option)
 				var buf bytes.Buffer
-				walk(c, &buf, 1, option)
+
+				var newOption = option.Clone()
+				newOption.TrimSpace = true
+				walk(c, &buf, 1, newOption)
 				if lines := strings.Split(strings.TrimSpace(buf.String()), "\n"); len(lines) > 0 {
 					for i, l := range lines {
 						if i > 0 {
@@ -454,12 +456,12 @@ type CustomRule interface {
 
 // Option is optional information for Convert.
 type Option struct {
-	GuessLang    func(string) (string, error)
-	Script       bool
-	Style        bool
-	PreseveSpace bool
-	CustomRules  []CustomRule
-	doNotEscape  bool // Used to know if to escape certain characters
+	GuessLang   func(string) (string, error)
+	Script      bool
+	Style       bool
+	TrimSpace   bool
+	CustomRules []CustomRule
+	doNotEscape bool // Used to know if to escape certain characters
 }
 
 // To make a copy of an option without changing the original
