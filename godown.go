@@ -375,6 +375,9 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 						fmt.Fprint(w, strings.Repeat("    ", nest)+l)
 					}
 					fmt.Fprint(w, "\n")
+					if nest == 0 {
+						fmt.Fprint(w, "\n")
+					}
 				}
 			case "li":
 				// To prevent trimming space inside the list items
