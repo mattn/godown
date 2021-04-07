@@ -99,12 +99,35 @@ func br(node *html.Node, w io.Writer, option *Option) {
 }
 
 func table(node *html.Node, w io.Writer, option *Option) {
-	for tr := node.FirstChild; tr != nil; tr = tr.NextSibling {
-		if tr.Type == html.ElementNode && strings.ToLower(tr.Data) == "tbody" {
-			node = tr
-			break
+	var list []*html.Node // create a list not to mess up the loop
+
+	for tsection := node.FirstChild; tsection != nil; tsection = tsection.NextSibling {
+		// if the thead/tbody/tfoot is not explicitly set, it is implicitly set as tbody
+		if tsection.Type == html.ElementNode {
+			switch strings.ToLower(tsection.Data) {
+			case "thead", "tbody", "tfoot":
+				for tr := tsection.FirstChild; tr != nil; tr = tr.NextSibling {
+					if strings.TrimSpace(tr.Data) == "" {
+						continue
+					}
+					list = append(list, tr)
+				}
+			}
 		}
 	}
+
+	// Now we create a new node, add all the <tr> to the node and convert it
+	newTableNode := new(html.Node)
+	for _, n := range list {
+		n.Parent.RemoveChild(n)
+		newTableNode.AppendChild(n)
+	}
+
+	tableRows(newTableNode, w, option)
+	fmt.Fprint(w, "\n")
+}
+
+func tableRows(node *html.Node, w io.Writer, option *Option) {
 	var header bool
 	var rows [][]string
 	for tr := node.FirstChild; tr != nil; tr = tr.NextSibling {
@@ -182,7 +205,6 @@ func table(node *html.Node, w io.Writer, option *Option) {
 			fmt.Fprint(w, "|\n")
 		}
 	}
-	fmt.Fprint(w, "\n")
 }
 
 var emptyElements = []string{
