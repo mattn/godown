@@ -137,6 +137,14 @@ func table(node *html.Node, w io.Writer, option *Option) {
 		}
 		rows = append(rows, cols)
 	}
+
+	// In most markdown flavours, a table is invalid without a header
+	// So we add an empty table header if no header was found
+	if !header {
+		rows = append([][]string{{""}}, rows...)
+		header = true
+	}
+
 	maxcol := 0
 	for _, cols := range rows {
 		if len(cols) > maxcol {
