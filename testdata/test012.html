@@ -31,3 +31,42 @@
 		<td>foo2</td>
 	</tr>
 </table>
+
+<table>
+  <thead>
+    <tr>
+      <th>Request</th>
+      <th>Handled in</th>
+      <th>Wait time</th>
+      <th>Actual response time</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>/</td>
+      <td>4s</td>
+      <td>0</td>
+      <td>4s</td>
+    </tr>
+    <tr>
+      <td>/ping</td>
+      <td>4s</td>
+      <td>4s</td>
+      <td>8s</td>
+    </tr>
+    <tr>
+      <td>/dfd</td>
+      <td>5s</td>
+      <td>8s</td>
+      <td>13s</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td>/foot</td>
+      <td>3s</td>
+      <td>5</td>
+      <td>2s</td>
+    </tr>
+  </tfoot>
+</table>
