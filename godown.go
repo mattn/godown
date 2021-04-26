@@ -301,6 +301,7 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 		}
 		fmt.Fprint(w, text)
 	}
+
 	n := 0
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
 		switch c.Type {
@@ -309,6 +310,12 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 			fmt.Fprint(w, c.Data)
 			fmt.Fprint(w, "-->\n")
 		case html.ElementNode:
+			customWalk, ok := option.customRulesMap[strings.ToLower(c.Data)]
+			if ok {
+				customWalk(c, w, nest, option)
+				break
+			}
+
 			switch strings.ToLower(c.Data) {
 			case "a":
 				// Links are invalid in markdown if the link text extends beyond a single line
@@ -453,22 +460,6 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 					fmt.Fprint(w, "\n\n")
 				}
 			default:
-				if option.CustomRules == nil {
-					walk(c, w, nest, option)
-					break
-				}
-
-				foundCustom := false
-				for _, cr := range option.CustomRules {
-					if tag, customWalk := cr.Rule(walk); strings.ToLower(c.Data) == tag {
-						customWalk(c, w, nest, option)
-						foundCustom = true
-					}
-				}
-
-				if foundCustom {
-					break
-				}
 				walk(c, w, nest, option)
 			}
 		default:
@@ -494,12 +485,13 @@ type CustomRule interface {
 
 // Option is optional information for Convert.
 type Option struct {
-	GuessLang   func(string) (string, error)
-	Script      bool
-	Style       bool
-	TrimSpace   bool
-	CustomRules []CustomRule
-	doNotEscape bool // Used to know if to escape certain characters
+	GuessLang      func(string) (string, error)
+	Script         bool
+	Style          bool
+	TrimSpace      bool
+	CustomRules    []CustomRule
+	doNotEscape    bool // Used to know if to escape certain characters
+	customRulesMap map[string]WalkFunc
 }
 
 // To make a copy of an option without changing the original
@@ -522,6 +514,13 @@ func Convert(w io.Writer, r io.Reader, option *Option) error {
 	if option == nil {
 		option = &Option{}
 	}
+
+	option.customRulesMap = make(map[string]WalkFunc)
+	for _, cr := range option.CustomRules {
+		tag, customWalk := cr.Rule(walk)
+		option.customRulesMap[tag] = customWalk
+	}
+
 	walk(doc, w, 0, option)
 	fmt.Fprint(w, "\n")
 	return nil

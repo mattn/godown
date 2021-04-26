@@ -267,3 +267,30 @@ func TestCustomRules(t *testing.T) {
 		t.Errorf("\nwant:\n%s}}}\ngot:\n%s}}}\n", want, buf.String())
 	}
 }
+
+type TestOverwriteRule struct{}
+
+func (r *TestOverwriteRule) Rule(next WalkFunc) (string, WalkFunc) {
+	return "div", func(node *html.Node, w io.Writer, nest int, option *Option) {
+		fmt.Fprint(w, "___")
+		next(node, w, nest, option)
+		fmt.Fprint(w, "___")
+	}
+}
+
+func TestCustomOverwriteRules(t *testing.T) {
+	var buf bytes.Buffer
+	err := Convert(&buf, strings.NewReader(`
+<div>here is the text in custom tag</div>
+	`), &Option{
+		CustomRules: []CustomRule{&TestOverwriteRule{}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `___here is the text in custom tag___
+`
+	if buf.String() != want {
+		t.Errorf("\nwant:\n%s}}}\ngot:\n%s}}}\n", want, buf.String())
+	}
+}
