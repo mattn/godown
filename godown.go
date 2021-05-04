@@ -319,7 +319,7 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 				aroundNonWhitespace(c, w, nest, option, "**", "**")
 			case "i", "em":
 				aroundNonWhitespace(c, w, nest, option, "_", "_")
-			case "del":
+			case "del", "s":
 				aroundNonWhitespace(c, w, nest, option, "~~", "~~")
 			case "br":
 				br(c, w, option)
