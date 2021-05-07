@@ -128,30 +128,15 @@ func table(node *html.Node, w io.Writer, option *Option) {
 }
 
 func tableRows(node *html.Node, w io.Writer, option *Option) {
-	var header bool
 	var rows [][]string
 	for tr := node.FirstChild; tr != nil; tr = tr.NextSibling {
 		if tr.Type != html.ElementNode || strings.ToLower(tr.Data) != "tr" {
 			continue
 		}
 		var cols []string
-		if !header {
-			for th := tr.FirstChild; th != nil; th = th.NextSibling {
-				if th.Type != html.ElementNode || strings.ToLower(th.Data) != "th" {
-					continue
-				}
-				var buf bytes.Buffer
-				walk(th, &buf, 0, option)
-				cols = append(cols, buf.String())
-			}
-			if len(cols) > 0 {
-				rows = append(rows, cols)
-				header = true
-				continue
-			}
-		}
 		for td := tr.FirstChild; td != nil; td = td.NextSibling {
-			if td.Type != html.ElementNode || strings.ToLower(td.Data) != "td" {
+			nodeType := strings.ToLower(td.Data)
+			if td.Type != html.ElementNode || (nodeType != "td" && nodeType != "th") {
 				continue
 			}
 			var buf bytes.Buffer
@@ -159,13 +144,6 @@ func tableRows(node *html.Node, w io.Writer, option *Option) {
 			cols = append(cols, buf.String())
 		}
 		rows = append(rows, cols)
-	}
-
-	// In most markdown flavours, a table is invalid without a header
-	// So we add an empty table header if no header was found
-	if !header {
-		rows = append([][]string{{""}}, rows...)
-		header = true
 	}
 
 	maxcol := 0
@@ -197,7 +175,7 @@ func tableRows(node *html.Node, w io.Writer, option *Option) {
 			}
 		}
 		fmt.Fprint(w, "|\n")
-		if i == 0 && header {
+		if i == 0 {
 			for j := 0; j < maxcol; j++ {
 				fmt.Fprint(w, "|")
 				fmt.Fprint(w, strings.Repeat("-", widths[j]))
