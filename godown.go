@@ -422,19 +422,32 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 					}
 				}
 			case "li":
-				// To prevent trimming space inside the list items
-				var newOption = option.Clone()
-				newOption.TrimSpace = false
+				br(c, w, option)
 
-				br(c, w, newOption)
-				if isChildOf(c, "ul") {
-					fmt.Fprint(w, "* ")
-				} else if isChildOf(c, "ol") {
-					n++
-					fmt.Fprint(w, fmt.Sprintf("%d. ", n))
+				var buf bytes.Buffer
+				walk(c, &buf, 0, option)
+
+				for i, l := range strings.Split(buf.String(), "\n") {
+					if strings.TrimSpace(l) == "" {
+						continue
+					}
+
+					if i == 0 {
+						if isChildOf(c, "ul") {
+							fmt.Fprint(w, "* ")
+						} else if isChildOf(c, "ol") {
+							n++
+							fmt.Fprint(w, fmt.Sprintf("%d. ", n))
+						}
+					} else {
+						fmt.Fprint(w, "\n")
+					}
+
+					fmt.Fprint(w, l)
 				}
-				walk(c, w, nest, newOption)
+
 				fmt.Fprint(w, "\n")
+
 			case "h1", "h2", "h3", "h4", "h5", "h6":
 				br(c, w, option)
 				fmt.Fprint(w, strings.Repeat("#", int(rune(c.Data[1])-rune('0')))+" ")
