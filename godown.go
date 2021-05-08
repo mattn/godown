@@ -84,6 +84,14 @@ func br(node *html.Node, w io.Writer, option *Option) {
 	if node == nil {
 		return
 	}
+
+	// If trimspace is set to true, new lines will be ignored in nodes
+	// so we force a new line when using br()
+	if option.TrimSpace {
+		fmt.Fprint(w, "\n")
+		return
+	}
+
 	switch node.Type {
 	case html.TextNode:
 		text := strings.Trim(node.Data, " \t")
@@ -408,13 +416,20 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 				newOption.TrimSpace = true
 
 				var buf bytes.Buffer
-				walk(c, &buf, 1, newOption)
-				if lines := strings.Split(strings.TrimSpace(buf.String()), "\n"); len(lines) > 0 {
+				walk(c, &buf, nest+1, newOption)
+
+				// Remove any empty lines in the list
+				if lines := strings.Split(buf.String(), "\n"); len(lines) > 0 {
 					for i, l := range lines {
+						if strings.TrimSpace(l) == "" {
+							continue
+						}
+
 						if i > 0 {
 							fmt.Fprint(w, "\n")
 						}
-						fmt.Fprint(w, strings.Repeat("    ", nest)+l)
+
+						fmt.Fprint(w, l)
 					}
 					fmt.Fprint(w, "\n")
 					if nest == 0 {
@@ -422,19 +437,42 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 					}
 				}
 			case "li":
-				// To prevent trimming space inside the list items
-				var newOption = option.Clone()
-				newOption.TrimSpace = false
+				br(c, w, option)
 
-				br(c, w, newOption)
-				if isChildOf(c, "ul") {
-					fmt.Fprint(w, "* ")
-				} else if isChildOf(c, "ol") {
-					n++
-					fmt.Fprint(w, fmt.Sprintf("%d. ", n))
+				var buf bytes.Buffer
+				walk(c, &buf, 0, option)
+
+				markPrinted := false
+
+				for _, l := range strings.Split(buf.String(), "\n") {
+					if strings.TrimSpace(l) == "" {
+						continue
+					}
+					// if markPrinted {
+
+					// }
+					if markPrinted {
+						fmt.Fprint(w, "\n    ")
+					}
+
+					fmt.Fprint(w, strings.Repeat("    ", nest-1))
+
+					if !markPrinted {
+						if isChildOf(c, "ul") {
+							fmt.Fprint(w, "* ")
+						} else if isChildOf(c, "ol") {
+							n++
+							fmt.Fprint(w, fmt.Sprintf("%d. ", n))
+						}
+
+						markPrinted = true
+					}
+
+					fmt.Fprint(w, l)
 				}
-				walk(c, w, nest, newOption)
+
 				fmt.Fprint(w, "\n")
+
 			case "h1", "h2", "h3", "h4", "h5", "h6":
 				br(c, w, option)
 				fmt.Fprint(w, strings.Repeat("#", int(rune(c.Data[1])-rune('0')))+" ")
