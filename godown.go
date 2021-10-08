@@ -470,7 +470,7 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 					full = fmt.Sprintf("![%s](%s %q)", alt, src, title)
 				}
 
-				fmt.Fprintf(w, full)
+				fmt.Fprint(w, full)
 			case "hr":
 				br(c, w, option)
 				fmt.Fprint(w, "\n---\n\n")
