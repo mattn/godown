@@ -553,5 +553,6 @@ func Convert(w io.Writer, r io.Reader, option *Option) error {
 
 	walk(doc, w, 0, option)
 	fmt.Fprint(w, "\n")
+	w.Flush()
 	return nil
 }
