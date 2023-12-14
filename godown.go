@@ -288,6 +288,11 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 		fmt.Fprint(w, text)
 	}
 
+	italicChar := "_"
+	if option.ItalicsAsterix {
+		italicChar = "*"
+	}
+
 	n := 0
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
 		switch c.Type {
@@ -319,7 +324,7 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 			case "b", "strong":
 				aroundNonWhitespace(c, w, nest, option, "**", "**")
 			case "i", "em":
-				aroundNonWhitespace(c, w, nest, option, "_", "_")
+				aroundNonWhitespace(c, w, nest, option, italicChar, italicChar)
 			case "del", "s":
 				aroundNonWhitespace(c, w, nest, option, "~~", "~~")
 			case "br":
@@ -524,6 +529,7 @@ type Option struct {
 	TrimSpace      bool
 	CustomRules    []CustomRule
 	IgnoreComments bool
+	ItalicsAsterix bool // Used to know if to use _ or * for italics
 	doNotEscape    bool // Used to know if to escape certain characters
 	customRulesMap map[string]WalkFunc
 }
