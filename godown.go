@@ -292,6 +292,9 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
 		switch c.Type {
 		case html.CommentNode:
+			if option.IgnoreComments {
+				break
+			}
 			fmt.Fprint(w, "<!--")
 			fmt.Fprint(w, c.Data)
 			fmt.Fprint(w, "-->\n")
@@ -390,7 +393,7 @@ func walk(node *html.Node, w io.Writer, nest int, option *Option) {
 			case "ul", "ol":
 				br(c, w, option)
 
-				var newOption = option.Clone()
+				newOption := option.Clone()
 				newOption.TrimSpace = true
 
 				var buf bytes.Buffer
@@ -520,6 +523,7 @@ type Option struct {
 	Style          bool
 	TrimSpace      bool
 	CustomRules    []CustomRule
+	IgnoreComments bool
 	doNotEscape    bool // Used to know if to escape certain characters
 	customRulesMap map[string]WalkFunc
 }
@@ -530,8 +534,7 @@ func (o *Option) Clone() *Option {
 		return nil
 	}
 
-	var clone Option
-	clone = *o
+	clone := *o
 	return &clone
 }
 
