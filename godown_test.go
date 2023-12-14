@@ -294,3 +294,34 @@ func TestCustomOverwriteRules(t *testing.T) {
 		t.Errorf("\nwant:\n%s}}}\ngot:\n%s}}}\n", want, buf.String())
 	}
 }
+
+func TestItalicStyle(t *testing.T) {
+	var buf bytes.Buffer
+	from := `<em>Hello world</em>`
+
+	// The default mode
+	err := Convert(&buf, strings.NewReader(from), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `_Hello world_
+`
+	if buf.String() != want {
+		t.Errorf("\nwant:\n%s}}}\ngot:\n%s}}}\n", want, buf.String())
+	}
+
+	buf.Reset()
+
+	// Change the italic style to asterix
+	err = Convert(&buf, strings.NewReader(from), &Option{ItalicsAsterix: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want = `*Hello world*
+`
+	if buf.String() != want {
+		t.Errorf("\nwant:\n%s}}}\ngot:\n%s}}}\n", want, buf.String())
+	}
+}
