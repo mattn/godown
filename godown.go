@@ -544,12 +544,8 @@ func (o *Option) Clone() *Option {
 	return &clone
 }
 
-// Convert convert HTML to Markdown. Read HTML from r and write to w.
-func Convert(w io.Writer, r io.Reader, option *Option) error {
-	doc, err := html.Parse(r)
-	if err != nil {
-		return err
-	}
+// Do the conversion from a html.Node object
+func ConvertFromNode(w io.Writer, doc *html.Node, option *Option) error {
 	if option == nil {
 		option = &Option{}
 	}
@@ -563,4 +559,13 @@ func Convert(w io.Writer, r io.Reader, option *Option) error {
 	walk(doc, w, 0, option)
 	fmt.Fprint(w, "\n")
 	return nil
+}
+
+// Convert convert HTML to Markdown. Read HTML from r and write to w.
+func Convert(w io.Writer, r io.Reader, option *Option) error {
+	doc, err := html.Parse(r)
+	if err != nil {
+		return err
+	}
+	return ConvertFromNode(w, doc, option)
 }
